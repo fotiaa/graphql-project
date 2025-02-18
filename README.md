@@ -64,7 +64,7 @@ Build an industry-standard GraphQL API that includes:
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd graphql-advanced-api
+cd graphql-project
 ```
 
 2. Install dependencies:
@@ -95,7 +95,7 @@ brew services start redis
 ```env
 PORT=4000
 NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/graphql-advanced-api
+MONGODB_URI=mongodb://localhost:27017/graphql-project
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 REDIS_URL=redis://localhost:6379
 RATE_LIMIT_WINDOW_MS=900000
@@ -105,7 +105,7 @@ RATE_LIMIT_MAX=100
 ### Project Structure
 
 ```
-graphql-advanced-api/
+graphql-project/
 ├── package.json
 ├── .env
 ├── .gitignore
