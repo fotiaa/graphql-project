@@ -25,70 +25,70 @@ dotenv.config();
 const rateLimitRule = createRateLimitRule({ identifyContext: (ctx) => ctx.id });
 
 async function startServer() {
-  const app = express();
-  const httpServer = createServer(app);
+    const app = express();
+    const httpServer = createServer(app);
 
-  // Create WebSocket server
-  const wsServer = new WebSocketServer({
-    server: httpServer,
-    path: '/graphql',
-  });
+    // Create WebSocket server
+    const wsServer = new WebSocketServer({
+        server: httpServer,
+        path: '/graphql',
+    });
 
-  const schema = makeExecutableSchema({ typeDefs, resolvers });
-  const pubsub = new PubSub();
+    const schema = makeExecutableSchema({ typeDefs, resolvers });
+    const pubsub = new PubSub();
 
-  // Set up WebSocket server
-  const serverCleanup = useServer(
-    {
-      schema,
-      context: (ctx) => {
-        // WebSocket context setup
-        return { ...ctx, pubsub };
-      },
-    },
-    wsServer
-  );
-
-  const server = new ApolloServer({
-    schema,
-    plugins: [
-      ApolloServerPluginDrainHttpServer({ httpServer }),
-      {
-        async serverWillStart() {
-          return {
-            async drainServer() {
-              await serverCleanup.dispose();
+    // Set up WebSocket server
+    const serverCleanup = useServer(
+        {
+            schema,
+            context: (ctx) => {
+                // WebSocket context setup
+                return { ...ctx, pubsub };
             },
-          };
         },
-      },
-    ],
-    validationRules: [depthLimit(7)],
-  });
+        wsServer
+    );
 
-  await server.start();
+    const server = new ApolloServer({
+        schema,
+        plugins: [
+            ApolloServerPluginDrainHttpServer({ httpServer }),
+            {
+                async serverWillStart() {
+                return {
+                    async drainServer() {
+                    await serverCleanup.dispose();
+                    },
+                };
+                },
+            },
+        ],
+        validationRules: [depthLimit(7)],
+    });
 
-  // Connect to MongoDB
-  await mongoose.connect(process.env.MONGODB_URI);
-  console.log('Connected to MongoDB');
+    await server.start();
 
-  // Create Redis client
-  const redis = new Redis(process.env.REDIS_URL);
+    // Connect to MongoDB
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected to MongoDB');
 
-  app.use(
-    '/graphql',
-    cors(),
-    express.json(),
-    expressMiddleware(server, {
-      context: async ({ req }) => createContext({ req, redis, pubsub }),
-    })
-  );
+    // Create Redis client
+    const redis = new Redis(process.env.REDIS_URL);
 
-  const PORT = process.env.PORT || 4000;
-  httpServer.listen(PORT, () => {
-    console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
-    console.log(`🚀 Subscriptions ready at ws://localhost:${PORT}/graphql`);
-  });
+    app.use(
+        '/graphql',
+        cors(),
+        express.json(),
+        expressMiddleware(server, {
+        context: async ({ req }) => createContext({ req, redis, pubsub }),
+        })
+    );
+
+    const PORT = process.env.PORT || 4000;
+    httpServer.listen(PORT, () => {
+        console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
+        console.log(`🚀 Subscriptions ready at ws://localhost:${PORT}/graphql`);
+    });
 }
 
 startServer().catch((err) => {
